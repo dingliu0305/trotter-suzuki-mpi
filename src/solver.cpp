@@ -20,7 +20,7 @@
 #include "kernel.h"
 #include <iostream>
 
-Solver::Solver(Lattice2D *_grid, State *_state, Hamiltonian *_hamiltonian,
+Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
                double _delta_t, string _kernel_type):
     grid(_grid), state(_state), hamiltonian(_hamiltonian), delta_t(_delta_t),
     kernel_type(_kernel_type) {
@@ -38,7 +38,7 @@ Solver::Solver(Lattice2D *_grid, State *_state, Hamiltonian *_hamiltonian,
     has_parameters_changed = false;
 }
 
-Solver::Solver(Lattice2D *_grid, State *state1, State *state2,
+Solver::Solver(Lattice *_grid, State *state1, State *state2,
                Hamiltonian2Component *_hamiltonian,
                double _delta_t, string _kernel_type):
     grid(_grid), state(state1), state_b(state2), hamiltonian(_hamiltonian), delta_t(_delta_t),
@@ -97,10 +97,18 @@ void Solver::init_kernel() {
     }
     if (kernel_type == "cpu") {
         if (single_component) {
-            kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+            if (grid->length_y == 0) {
+                kernel = new CPUBlock1D(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+            } else {
+                kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+            }
         }
         else {
-            kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+            if (grid->length_y == 0) {
+                kernel = new CPUBlock1D(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+            } else {
+                kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+            }
         }
     }
     else if (kernel_type == "gpu") {
